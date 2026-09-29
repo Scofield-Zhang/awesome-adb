@@ -4,7 +4,11 @@ ADB，即 [Android Debug Bridge](https://developer.android.com/studio/command-li
 
 持续更新中，欢迎提 PR 和 Issue 补充指正，觉得有用的可以将 [此 GitHub 仓库](https://github.com/mzlogin/awesome-adb) Star 收藏备用。
 
-**注：** 有部分命令的支持情况可能与 Android 系统版本及定制 ROM 的实现有关。
+给本项目提建议和意见，或想与我交流，可关注微信公众号「闷骚的程序员」：
+
+<img src="https://cdn.jsdelivr.net/gh/mzlogin/mzlogin.github.io/assets/images/qrcode.jpg" style="width:120px;height:120px;" >
+
+**注：** 文中有部分命令的支持情况可能与 Android 系统版本及定制 ROM 的实现有关。
 
 Other languages: [:gb: English](./README.en.md)
 
@@ -22,6 +26,7 @@ Other languages: [:gb: English](./README.en.md)
 * [设备连接管理](#设备连接管理)
     * [查询已连接设备/模拟器](#查询已连接设备模拟器)
     * [USB 连接](#usb-连接)
+    * [无线连接（Android11 及以上）](#无线连接android11-及以上)
     * [无线连接（需要借助 USB 线）](#无线连接需要借助-usb-线)
     * [无线连接（无需借助 USB 线）](#无线连接无需借助-usb-线)
 * [应用管理](#应用管理)
@@ -32,6 +37,9 @@ Other languages: [:gb: English](./README.en.md)
         * [包名包含某字符串的应用](#包名包含某字符串的应用)
     * [安装 APK](#安装-apk)
     * [卸载应用](#卸载应用)
+    * [停用/启用应用](#停用启用应用)
+        * [停用应用](#停用应用)
+        * [启用应用](#启用应用)
     * [清除应用数据与缓存](#清除应用数据与缓存)
     * [查看前台 Activity](#查看前台-activity)
     * [查看正在运行的 Services](#查看正在运行的-services)
@@ -308,6 +316,50 @@ emulator-5554	device
 
    说明连接成功。
 
+### 无线连接（Android11 及以上）
+
+Android 11 及更高版本支持使用 Android 调试桥 (adb) 从工作站以无线方式部署和调试应用。例如，您可以将可调试应用部署到多台远程设备，而无需通过 USB 实际连接设备。这样就可以避免常见的 USB 连接问题，例如驱动程序安装方面的问题。
+
+[官方文档](https://developer.android.com/studio/command-line/adb?hl=zh_cn#connect-to-a-device-over-wi-fi-android-11+)
+
+操作步骤：
+
+1. 更新到最新版本的 [SDK 平台工具](https://developer.android.com/studio/releases/platform-tools?hl=zh_cn)(至少30.0.0)。
+
+2. 将 Android 设备与要运行 adb 的电脑连接到同一个局域网，比如连到同一个 WiFi。
+
+3. 在开发者选项中启用**无线调试**。
+
+4. 在询问要允许在此网络上进行无线调试吗？的对话框中，点击允许。
+
+5. 选择使用配对码配对设备，使用弹窗中的 IP 地址和端口号。
+
+   ```sh
+   adb pair ipaddr:port
+   ```
+
+6. 提示`Enter pairing code: `时输入弹窗中的配对码，成功后会显示`Successfully paired to ...`。
+
+7. 使用无线调试下的 **IP 地址和端口**。
+
+   ```sh
+   adb connect ipaddr:port
+   ```
+
+8. 确认连接状态。
+
+   ```sh
+   adb devices
+   ```
+
+   如果能看到
+
+   ```sh
+   ipaddr:port device
+   ```
+
+说明连接成功。
+
 ### 无线连接（需要借助 USB 线）
 
 除了可以通过 USB 连接设备与电脑来使用 adb，也可以通过无线连接——虽然连接过程中也有需要使用 USB 的步骤，但是连接成功之后你的设备就可以在一定范围内摆脱 USB 连接线的限制啦！
@@ -508,14 +560,16 @@ adb install [-lrtsdg] <path_to_apk>
 
 `adb install` 后面可以跟一些可选参数来控制安装 APK 的行为，可用参数及含义如下：
 
-| 参数 | 含义                                                                              |
-|------|-----------------------------------------------------------------------------------|
-| -l   | 将应用安装到保护目录 /mnt/asec                                                    |
-| -r   | 允许覆盖安装                                                                      |
-| -t   | 允许安装 AndroidManifest.xml 里 application 指定 `android:testOnly="true"` 的应用 |
-| -s   | 将应用安装到 sdcard                                                               |
-| -d   | 允许降级覆盖安装                                                                  |
-| -g   | 授予所有运行时权限                                                                |
+| 参数                 | 含义                                                                                  |
+|----------------------|---------------------------------------------------------------------------------------|
+| -l                   | 将应用安装到保护目录 /mnt/asec                                                        |
+| -r                   | 允许覆盖安装                                                                          |
+| -t                   | 允许安装 AndroidManifest.xml 里 application 指定 `android:testOnly="true"` 的应用     |
+| -s                   | 将应用安装到 sdcard                                                                   |
+| -d                   | 允许降级覆盖安装                                                                      |
+| -g                   | 授予所有运行时权限                                                                    |
+| --abi abi-identifier | 为特定 ABI 强制安装 apk，abi-identifier 可以是 armeabi-v7a、arm64-v8a、v86、x86_64 等 |
+| --bypass-low-target-sdk-block | 忽略应用的 TargetSDK 低于设备系统支持的最低版本的限制 |
 
 运行命令后如果见到类似如下输出（状态为 `Success`）代表安装成功：
 
@@ -547,6 +601,7 @@ Failure [INSTALL_FAILED_ALREADY_EXISTS]
 
 | 输出                                                                | 含义                                                                     | 解决办法                                                                           |
 |---------------------------------------------------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| INSTALL\_FAILED\_DEPRECATED\_SDK\_VERSION | 应用的 TargetSDK 低于设备系统支持的最低版本 | 更新应用的 TargetSDK，或 `adb install` 时使用 `--bypass-low-target-sdk-block` 参数|
 | INSTALL\_FAILED\_ALREADY\_EXISTS                                    | 应用已经存在，或卸载了但没卸载干净                                       | `adb install` 时使用 `-r` 参数，或者先 `adb uninstall <packagename>` 再安装        |
 | INSTALL\_FAILED\_INVALID\_APK                                       | 无效的 APK 文件                                                          |                                                                                    |
 | INSTALL\_FAILED\_INVALID\_URI                                       | 无效的 APK 文件名                                                        | 确保 APK 文件名里无中文                                                            |
@@ -584,12 +639,13 @@ Failure [INSTALL_FAILED_ALREADY_EXISTS]
 | INSTALL\_PARSE\_FAILED\_MANIFEST\_MALFORMED                         | 解析 manifest 文件时遇到结构性错误                                       |                                                                                    |
 | INSTALL\_PARSE\_FAILED\_MANIFEST\_EMPTY                             | 在 manifest 文件里找不到找可操作标签（instrumentation 或 application）   |                                                                                    |
 | INSTALL\_FAILED\_INTERNAL\_ERROR                                    | 因系统问题安装失败                                                       |                                                                                    |
-| INSTALL\_FAILED\_USER\_RESTRICTED                                   | 用户被限制安装应用                                                       | 在开发者选项里将「USB安装」打开，如果已经打开了，那先关闭再打开。                                                                                   |
+| INSTALL\_FAILED\_USER\_RESTRICTED                                   | 用户被限制安装应用                                                       | 在开发者选项里将「USB安装」打开，如果已经打开了，那先关闭再打开。                  |
 | INSTALL\_FAILED\_DUPLICATE\_PERMISSION                              | 应用尝试定义一个已经存在的权限名称                                       |                                                                                    |
 | INSTALL\_FAILED\_NO\_MATCHING\_ABIS                                 | 应用包含设备的应用程序二进制接口不支持的 native code                     |                                                                                    |
 | INSTALL\_CANCELED\_BY\_USER                                         | 应用安装需要在设备上确认，但未操作设备或点了取消                         | 在设备上同意安装                                                                   |
 | INSTALL\_FAILED\_ACWF\_INCOMPATIBLE                                 | 应用程序与设备不兼容                                                     |                                                                                    |
 | INSTALL_FAILED_TEST_ONLY                                            | APK 文件是使用 Android Studio 直接 RUN 编译出来的文件                    | 通过 Gradle 的 assembleDebug 或 assembleRelease 重新编译，或者 Generate Signed APK |
+| INSTALL_FAILED_ABORTED: User rejected permissions                   | 应用安装有风险提示需要用户在设备上确认，但用户未操作设备或点了取消       | 在设备上同意安装                                                                   |
 | does not contain AndroidManifest.xml                                | 无效的 APK 文件                                                          |                                                                                    |
 | is not a valid zip file                                             | 无效的 APK 文件                                                          |                                                                                    |
 | Offline                                                             | 设备未连接成功                                                           | 先将设备与 adb 连接成功                                                            |
@@ -632,6 +688,42 @@ adb uninstall com.qihoo360.mobilesafe
 ```
 
 表示卸载 360 手机卫士。
+
+### 停用/启用应用
+
+查看启用的应用列表：
+
+```sh
+adb shell pm list packages -e
+```
+
+#### 停用应用
+
+命令：
+
+```sh
+adb shell pm disable-user <packagename>
+```
+
+命令示例：
+
+```sh
+adb shell pm disable-user com.qihoo360.mobilesafe
+```
+
+#### 启用应用
+
+命令：
+
+```sh
+adb shell pm enable <packagename>
+```
+
+命令示例：
+
+```sh
+adb shell pm enable com.qihoo360.mobilesafe
+```
 
 ### 清除应用数据与缓存
 
@@ -1220,6 +1312,18 @@ adb shell input text hello
 ```
 
 现在 `hello` 出现在文本框了。
+
+如果想输入中文，可以在设备上安装 [ADBKeyBoard.apk](https://github.com/senzhk/ADBKeyBoard)，详细文档参考 [这里](https://github.com/senzhk/ADBKeyBoard)。
+
+然后执行命令:
+
+```sh
+# 1. 设置当前输入法为 ADBKeyBoard
+adb shell ime set com.android.adbkeyboard/.AdbIME   
+
+# 2. 输入中文
+adb shell am broadcast -a ADB_INPUT_TEXT --es msg '你好'
+```
 
 ## 查看日志
 
@@ -2150,6 +2254,23 @@ network={
 
 `ssid` 即为我们在 WLAN 设置里看到的名称，`psk` 为密码，`key_mgmt` 为安全加密方式。
 
+如果 Android O 或以后，WiFi 密码保存的地址有变化，是在 `WifiConfigStore.xml` 里面
+
+```sh
+adb shell
+su
+cat /data/misc/wifi/WifiConfigStore.xml
+```
+
+输出格式：
+
+数据项较多，只需关注 `ConfigKey`（WiFi 名字）和 `PreSharedKey`（WiFi 密码）即可
+
+```xml
+<string name="ConfigKey">&quot;Wi-Fi&quot;WPA_PSK</string>
+<string name="PreSharedKey">&quot;931907334&quot;</string>
+```
+
 ### 设置系统日期和时间
 
 **注：需要 root 权限。**
@@ -2495,7 +2616,7 @@ Otherwise check for a confirmation dialog on your device.
 
 * [aapt](./related/aapt.md)
 * [am](./related/am.md)
-* [dumsys](./related/dumpsys.md)
+* [dumpsys](./related/dumpsys.md)
 * [pm](./related/pm.md)
 * [uiautomator](./related/uiautomator.md)
 
